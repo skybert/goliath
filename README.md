@@ -1,9 +1,10 @@
 
-# goliath - An colossal OIDC test bed
+# goliath - The humugously small OIDC & OAuth authorization server
 
 Standalone authorization server that implements a subset of OIDC and
-related OAuth2 specification. Useful for testing your OIDC enabled
-apps without setting up an actual IAM like Okta, Keycloak or Entra ID.
+related OAuth2 specifications. The goal is to make it useful for
+testing your OIDC enabled apps without setting up an actual IAM like
+Okta, Keycloak or Entra ID.
 
 # Usage
 
@@ -14,7 +15,7 @@ $ goliath \
 ```
 
 # Supported endpoints
-- `/ping` for debugging purposes
+- ✅ `/ping` for debugging purposes
 
 # Planned endpoints & specifications
 
@@ -25,5 +26,5 @@ $ goliath \
 - `/token` [OIDC Token Endpoint ](https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint)
 - `/introspect` [OAuth 2.0 Token
   Introspection](https://datatracker.ietf.org/doc/html/rfc7662)
-- [RFC7636 Proof Key for Code Exchange by OAuth Public
+- PKCE, [RFC7636 Proof Key for Code Exchange by OAuth Public
   Clients](https://www.rfc-editor.org/rfc/rfc7636)
