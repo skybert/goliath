@@ -1,5 +1,5 @@
 
-# goliath - The humugously small OIDC & OAuth authorization server
+# goliath - The humongously small OIDC & OAuth authorization server
 
 Standalone authorization server that implements a subset of OIDC and
 related OAuth2 specifications. The goal is to make it useful for
