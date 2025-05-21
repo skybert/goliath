@@ -5,7 +5,9 @@ fmt:
 	go fmt ./...
 vet: fmt
 	go vet ./...
-build: vet
+static_check: vet
+	~/go/bin/staticcheck ./...
+build: static_check
 	go build
 build_with_debug: vet
 	# -m print optimization decisions

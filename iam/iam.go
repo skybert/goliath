@@ -1,15 +1,21 @@
+// Author: torstein
 package iam
 
 import (
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"net/url"
+	"strings"
 )
+
+var sessions = map[string]OIDCSession{}
+var nonceByCode = map[string]string{}
 
 type GoliathIAM interface {
 	Ping() (string, error)
 	Authorize() (string, error)
-	Token() (string, error)
+	Token(string, string) (string, error)
 }
 
 type InMemoryIAM struct {
@@ -21,8 +27,17 @@ func (iam InMemoryIAM) Ping() (string, error) {
 func (iam InMemoryIAM) Authorize() (string, error) {
 	return "Starting code flow", nil
 }
-func (iam InMemoryIAM) Token() (string, error) {
-	return "ey.234.24323", nil
+func (iam InMemoryIAM) Token(iss, code string) (string, error) {
+	mySigningKey := []byte("AllYourBase")
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			string(ClaimIssuer):   iss,
+			string(ReqParamNonce): nonceByCode[code],
+		})
+	ss, err := token.SignedString(mySigningKey)
+	fmt.Println(ss, err)
+	return ss, err
 }
 
 type Controller struct {
@@ -40,6 +55,36 @@ func (c Controller) Ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(message + "\n"))
 }
 
+// https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
+//
+// POST /token HTTP/1.1
+//
+//	Host: server.example.com
+//	Content-Type: application/x-www-form-urlencoded
+//	Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
+//
+//	grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
+//	  &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+func (c Controller) Token(w http.ResponseWriter, r *http.Request) {
+	// TODO hardening, check post, that the form contains the
+	// values and so on.
+	code := r.FormValue(string(ResponseTypeCode))
+	fmt.Printf("code: %v\n", code)
+	fmt.Printf("nonceByCode: %v\n", nonceByCode)
+
+	// TODO r.URL.Scheme is empty
+	iss := r.URL.Scheme + "://" + r.Host
+	t, err := c.iam.Token(iss, code)
+	if err != nil {
+		fmt.Printf("Got err: %v\n", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Write([]byte(t + "\n"))
+
+}
+
 // https://authorization-server.com/authorize?
 //
 //	response_type=code
@@ -49,23 +94,32 @@ func (c Controller) Ping(w http.ResponseWriter, r *http.Request) {
 //	&state=WdunT3HwhqOFXxLI
 func (c Controller) Authorize(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%v\n", r.URL.Query())
+	// TODO validate responseType
 	responseType := r.URL.Query().Get("response_type")
 	fmt.Printf("%v\n", responseType)
 
-	// TODO validate responseType
-	clientId := r.URL.Query().Get("client_id")
+	// TODO is this the OIDC client we know about?
+	clientId := r.URL.Query().Get(string(ReqParamClientId))
 	fmt.Printf("%v\n", clientId)
 
+	// TOOD validate that redirect URI is allowed
 	redirectURI := r.URL.Query().Get("redirect_uri")
 	fmt.Printf("redirect_uri=%v\n", redirectURI)
 
-	// TOOD validate that redirect URI is allowed
-	scope := r.URL.Query().Get("scope")
-	fmt.Printf("%v\n", scope)
-
 	// TODO validate that scope is allowed
+	scope := r.URL.Query().Get("scope")
+	scopes := strings.Split(scope, " ")
+	err := ValidateScopes(scopes)
+	if err != nil {
+		fmt.Printf("Got err: %v\n", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	fmt.Printf("%v\n", scopes)
+
 	state := r.URL.Query().Get("state")
-	// TODO keep track of state
+	nonce := r.URL.Query().Get("nonce")
 
 	message, err := c.iam.Authorize()
 	if err != nil {
@@ -82,11 +136,20 @@ func (c Controller) Authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	code := GenerateServerCode()
+	oidcSession := OIDCSession{
+		state:       state,
+		nonce:       nonce,
+		redirectURI: redirectURI,
+		code:        code,
+	}
+	sessions[state] = oidcSession
+	fmt.Printf("%v\n", sessions)
+
 	queryParameters := u.Query()
 	queryParameters.Add("state", state)
-	// TODO generate server side code
-	code := "server-generated-code"
 	queryParameters.Add("code", code)
+	nonceByCode[code] = nonce
 
 	// TODO is this really the best/safest way of manipulating the
 	// URI parameters?
@@ -112,5 +175,6 @@ func Run() {
 	c := NewController()
 	http.HandleFunc("/ping", c.Ping)
 	http.HandleFunc("/authorize", c.Authorize)
+	http.HandleFunc("/token", c.Token)
 	http.ListenAndServe(":8000", nil)
 }

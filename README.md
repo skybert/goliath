@@ -22,8 +22,8 @@ $ goliath \
 - `/.well-known/openid-configuration` [OpenID Connect Discovery 1.0
   incorporating errata set
   2](https://openid.net/specs/openid-connect-discovery-1_0.html)
-- `/authorize` [OIDC Authorization Endpoint ](https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint)
-- `/token` [OIDC Token Endpoint ](https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint)
+- STARTED `/authorize` [OIDC Authorization Endpoint ](https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint)
+- STARTED `/token` [OIDC Token Endpoint ](https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint)
 - `/introspect` [OAuth 2.0 Token
   Introspection](https://datatracker.ietf.org/doc/html/rfc7662)
 - PKCE, [RFC7636 Proof Key for Code Exchange by OAuth Public
