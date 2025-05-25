@@ -124,6 +124,11 @@ func (c Controller) Token(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+
+	// TODO Why doesn't DetectContentType work here?
+	fmt.Printf("Detected: %v\n", http.DetectContentType([]byte(t)))
+
+	w.Header().Set("Content-type", "application/json")
 	w.Write([]byte(t + "\n"))
 
 }
