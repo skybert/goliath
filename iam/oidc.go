@@ -3,18 +3,18 @@
 // Author: torstein
 package iam
 
-import "slices"
-
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"slices"
+	"time"
+)
 
 type ReqParam string
 type Scope string
 type RespType string
 type Claim string
-
-const (
-	ClaimIssuer Claim = "iss"
-)
 
 const (
 	ReqParamNonce        ReqParam = "nonce"
@@ -55,4 +55,20 @@ func ValidateScopes(scopes []string) error {
 
 	return errors.New("scopes lack: " + string(ScopeOpenId))
 
+}
+
+func IdToken(exp time.Time, iss string, nonce string) (string, error) {
+	// TODO read signing key from conf
+	mySigningKey := []byte("AllYourBase")
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			string(ClaimIssuedAt):       time.Now().Unix(),
+			string(ClaimExpirationTime): exp.Unix(),
+			string(ClaimIssuer):         iss,
+			string(ReqParamNonce):       nonce,
+		})
+	ss, err := token.SignedString(mySigningKey)
+	fmt.Println(ss, err)
+	return ss, err
 }
