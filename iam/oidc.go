@@ -57,9 +57,14 @@ func ValidateScopes(scopes []string) error {
 
 }
 
-func IdToken(exp time.Time, iss string, nonce string) (string, error) {
+func IdToken(
+	exp time.Time,
+	iss string,
+	nonce string,
+	conf GoliathConf) (string, error) {
+
 	// TODO read signing key from conf
-	mySigningKey := []byte("AllYourBase")
+	mySigningKey := conf.String("token.signing_key")
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{

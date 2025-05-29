@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -18,10 +19,13 @@ type GoliathIAM interface {
 	Ping() (string, error)
 	Authorize() (string, error)
 	Token(string, string) (string, error)
+	Conf() GoliathConf
 }
 
 type InMemoryIAM struct {
+	conf GoliathConf
 }
+
 type TokenResonse struct {
 	AccessToken  string `json:"access_token"`
 	IdToken      string `json:"id_token"`
@@ -30,6 +34,9 @@ type TokenResonse struct {
 	TokenType    string `json:"token_type"`
 }
 
+func (iam InMemoryIAM) Conf() GoliathConf {
+	return iam.conf
+}
 func (iam InMemoryIAM) Ping() (string, error) {
 	return "Pong from in memory", nil
 }
@@ -50,7 +57,7 @@ func (iam InMemoryIAM) Token(iss, code string) (string, error) {
 	// TODO get token expiry from conf
 	exp := time.Now().Add(2 * time.Hour)
 
-	idToken, err := IdToken(exp, iss, nonce)
+	idToken, err := IdToken(exp, iss, nonce, iam.conf)
 	if err != nil {
 		return "", err
 	}
@@ -216,7 +223,9 @@ func NewController() Controller {
 }
 
 func NewInMemoryIAM() InMemoryIAM {
-	return InMemoryIAM{}
+	return InMemoryIAM{
+		conf: NewGoliathConf(),
+	}
 }
 
 func Run() {
@@ -224,5 +233,7 @@ func Run() {
 	http.HandleFunc("/ping", c.Ping)
 	http.HandleFunc("/authorize", c.Authorize)
 	http.HandleFunc("/token", c.Token)
-	http.ListenAndServe(":8000", nil)
+	port := c.iam.Conf().String("server.port")
+	log.Printf("starting Goliath on port %s ...", port)
+	http.ListenAndServe(":"+port, nil)
 }
