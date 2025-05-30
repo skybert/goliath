@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -227,12 +228,17 @@ func NewInMemoryIAM() InMemoryIAM {
 	}
 }
 
-func Run() {
+func Run(args GoliathCLIArgs) {
 	c := NewController()
 	http.HandleFunc("/ping", c.Ping)
 	http.HandleFunc("/authorize", c.Authorize)
 	http.HandleFunc("/token", c.Token)
+
 	port := c.iam.Conf().String("server.port")
+	if args.ServerPort > 0 {
+		port = strconv.Itoa(args.ServerPort)
+	}
+
 	log.Printf("starting Goliath on port %s ...", port)
 	http.ListenAndServe(":"+port, nil)
 }

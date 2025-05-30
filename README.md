@@ -14,7 +14,12 @@ $ goliath \
     --pkce
 ```
 
+# Configuration
+
+Configured in [conf/golang.toml](conf/golang.toml).
+
 # Supported endpoints
+
 - ✅ `/ping` for debugging purposes
 - ✅ `/authorize` [OIDC Authorization Endpoint ](https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint)
 - ✅ `/token` [OIDC Token Endpoint ](https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint)

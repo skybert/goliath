@@ -40,3 +40,8 @@ func NewGoliathConf() GoliathConf {
 
 	return KoanfConf{}
 }
+
+type GoliathCLIArgs struct {
+	ServerPort int
+	PKCE       bool
+}

@@ -7,13 +7,13 @@ vet: fmt
 	go vet ./...
 static_check: vet
 	~/go/bin/staticcheck ./...
-compile build: static_check
+build compile: static_check
 	go build
-build_with_debug: vet
+build_with_debug compile_with_debug: vet
 	# -m print optimization decisions
 	go build -gcflags="-m"
 run: goliath
-	./goliath
+	./goliath --port 8000
 run_gc_debug: goliath
 	GODEBUG=gctrace=1 ./goliath
 todo:
