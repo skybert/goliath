@@ -39,7 +39,7 @@ Configured in [conf/golang.toml](conf/golang.toml).
 ## 1) Initiate the code authorization flow
 
 ```ini
-$ curl --include "http://localhost:8000/authorize?scope=openid&state=foo-state-from-client&redirect_uri=https://example.com/callback&nonce=random-nonce-${RANDOM}"
+$ curl --include 'http://localhost:8000/authorize?client_id=goliath-client-id&response_type=code&scope=openid&state=foo-state-from-client&redirect_uri=https://example.com/callback&nonce=2324'
 HTTP/1.1 200 OK
 Location: https://example.com/callback?code=K4C6CIUMG4YXUVNQUSZXCLR5TI&state=foo-state-from-client
 Date: Sun, 25 May 2025 13:32:56 GMT
@@ -54,7 +54,9 @@ shell, do:
 
 ```ini
 $ code=$(
-  curl --include 'http://localhost:8000/authorize?scope=openid&state=foo-state-from-client&redirect_uri=https://example.com/callback&nonce=2324' 2>&1 |
+  curl --include \
+    'http://localhost:8000/authorize?client_id=goliath-client-id&response_type=code&scope=openid&state=foo-state-from-client&redirect_uri=https://example.com/callback&nonce=2324' \
+    2>&1 |
   sed -nr 's#.*Location: .*code=([^&]*)\&.*#\1#p')
 ```
 

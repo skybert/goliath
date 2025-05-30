@@ -6,6 +6,14 @@ answer = "42"
 [server]
 port = "8000"
 
+[app]
+client_id = "goliath-client-id"
+client_secret = "Over the Hills and Far Away"
+allowed_redirect_uris = [
+  "http://localhost:8000/callback",
+  "https://example.com/callback"
+]
+
 [token]
 # Reference to
 # https://en.wikipedia.org/wiki/All_your_base_are_belong_to_us

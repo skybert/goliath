@@ -24,7 +24,8 @@ const (
 )
 
 const (
-	ScopeOpenId Scope = "openid"
+	ScopeOpenId        Scope = "openid"
+	ScopeOfflineAccess Scope = "offline_access"
 )
 
 const (
@@ -55,6 +56,27 @@ func ValidateScopes(scopes []string) error {
 	}
 
 	return errors.New("scopes lack: " + string(ScopeOpenId))
+
+}
+
+func ValidateClientId(clientId string, conf GoliathConf) error {
+	configuredClientId := conf.String("app.client_id")
+	if clientId == configuredClientId {
+		return nil
+	}
+
+	return errors.New(
+		"client id: " +
+			clientId +
+			" doesn't correspond to server conf: " +
+			configuredClientId)
+}
+
+func ValidateRedirectURI(uri string, conf GoliathConf) error {
+	if slices.Contains(conf.Strings("app.allowed_redirect_uris"), uri) {
+		return nil
+	}
+	return errors.New("disallowed redirect uri: " + uri + "\n")
 
 }
 

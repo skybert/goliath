@@ -9,6 +9,10 @@ static_check: vet
 	~/go/bin/staticcheck ./...
 build compile: static_check
 	go build
+test:
+	go test ./...
+coverage:
+	go test --cover ./...
 build_with_debug compile_with_debug: vet
 	# -m print optimization decisions
 	go build -gcflags="-m"

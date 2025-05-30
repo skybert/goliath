@@ -148,30 +148,45 @@ func (c Controller) Token(w http.ResponseWriter, r *http.Request) {
 //	&scope=photo+offline_access
 //	&state=WdunT3HwhqOFXxLI
 func (c Controller) Authorize(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("%v\n", r.URL.Query())
-	// TODO validate responseType
-	responseType := r.URL.Query().Get("response_type")
-	fmt.Printf("%v\n", responseType)
+	log.Printf("/authorize query: %v", r.URL.Query())
 
-	// TODO is this the OIDC client we know about?
+	responseType := r.URL.Query().Get(string(ReqParamResponseType))
+	err := ValidateResponseType(responseType)
+	if err != nil {
+		log.Printf("Got err: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	clientId := r.URL.Query().Get(string(ReqParamClientId))
 	fmt.Printf("%v\n", clientId)
+	err = ValidateClientId(clientId, c.iam.Conf())
+	if err != nil {
+		log.Printf("Got err: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
-	// TOOD validate that redirect URI is allowed
 	redirectURI := r.URL.Query().Get("redirect_uri")
-	fmt.Printf("redirect_uri=%v\n", redirectURI)
+	err = ValidateRedirectURI(redirectURI, c.iam.Conf())
+	if err != nil {
+		log.Printf("Got err: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
-	// TODO validate that scope is allowed
 	scope := r.URL.Query().Get("scope")
 	scopes := strings.Split(scope, " ")
-	err := ValidateScopes(scopes)
+	err = ValidateScopes(scopes)
 	if err != nil {
 		fmt.Printf("Got err: %v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	fmt.Printf("%v\n", scopes)
 
 	state := r.URL.Query().Get("state")
 	nonce := r.URL.Query().Get("nonce")
