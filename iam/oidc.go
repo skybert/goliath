@@ -5,10 +5,11 @@ package iam
 
 import (
 	"errors"
-	"fmt"
-	"github.com/golang-jwt/jwt/v5"
+	"log"
 	"slices"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type ReqParam string
@@ -58,13 +59,11 @@ func ValidateScopes(scopes []string) error {
 }
 
 func IdToken(
-	exp time.Time,
 	iss string,
 	nonce string,
 	conf GoliathConf) (string, error) {
 
-	// TODO read signing key from conf
-	mySigningKey := conf.String("token.signing_key")
+	exp := conf.MillisAsTime("token.refresh_token_exp_ms")
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{
@@ -73,7 +72,20 @@ func IdToken(
 			string(ClaimIssuer):         iss,
 			string(ReqParamNonce):       nonce,
 		})
-	ss, err := token.SignedString(mySigningKey)
-	fmt.Println(ss, err)
+	signingKey := []byte(conf.String("token.signing_key"))
+	ss, err := token.SignedString(signingKey)
+	log.Printf(ss, err)
 	return ss, err
+}
+
+func TokenResponseExpiresIn(conf GoliathConf) int {
+	now := time.Now()
+	// Although three tokens are returned from the /token
+	// endpoint, it's the the access token expiry, in seconds,
+	// that's to be in the expires_in field, see
+	// https://openid.net/specs/openid-connect-core-1_0.html#TokenResponse
+	expires := conf.MillisAsTime("token.access_token_exp_ms")
+
+	expiresIn := expires.UnixMilli() - now.UnixMilli()
+	return int(expiresIn / 1000)
 }

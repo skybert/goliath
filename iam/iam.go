@@ -1,4 +1,4 @@
-// Author: torstein
+// Author: torstein at skybert.net
 package iam
 
 import (
@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 var sessions = map[string]OIDCSession{}
@@ -37,49 +36,45 @@ type TokenResonse struct {
 func (iam InMemoryIAM) Conf() GoliathConf {
 	return iam.conf
 }
+
 func (iam InMemoryIAM) Ping() (string, error) {
 	return "Pong from in memory", nil
 }
+
 func (iam InMemoryIAM) Authorize() (string, error) {
 	return "Starting code flow", nil
 }
+
 func (iam InMemoryIAM) Token(iss, code string) (string, error) {
 	// Validate the token request according to section 3.1.3.2
 	// https://openid.net/specs/openid-connect-core-1_0.html
 	if nonceByCode[code] == "" {
-		return "", errors.New("I don't know about code=" + code + "\n")
+		return "", errors.New("I don't know about code " + code + "\n")
 	}
 
 	nonce := nonceByCode[code]
 	// Ensure the same code isn't used multiple times
 	nonceByCode[code] = ""
 
-	// TODO get token expiry from conf
-	exp := time.Now().Add(2 * time.Hour)
-
-	idToken, err := IdToken(exp, iss, nonce, iam.conf)
+	idToken, err := IdToken(iss, nonce, iam.conf)
 	if err != nil {
 		return "", err
 	}
-	// TODO different exp of access token than id token
-	accessToken, err := AccessToken(iss, exp)
+	accessToken, err := AccessToken(iss, iam.conf)
 	if err != nil {
 		return "", err
 	}
-	// TODO different exp of refresh token than id token
-	refreshToken, err := RefreshToken(iss, exp)
+	refreshToken, err := RefreshToken(iss, iam.conf)
 	if err != nil {
 		return "", err
 	}
 
-	// TODO read token expiry from conf
-	expiresIn := 3600
 	tokenResponse := TokenResonse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		IdToken:      idToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    expiresIn,
+		ExpiresIn:    TokenResponseExpiresIn(iam.conf),
 	}
 
 	result, err := json.Marshal(&tokenResponse)
@@ -97,7 +92,7 @@ type Controller struct {
 func (c Controller) Ping(w http.ResponseWriter, r *http.Request) {
 	message, err := c.iam.Ping()
 	if err != nil {
-		fmt.Printf("Got err: %v\n", err)
+		log.Printf("Got err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
@@ -126,7 +121,7 @@ func (c Controller) Token(w http.ResponseWriter, r *http.Request) {
 	iss := r.URL.Scheme + "://" + r.Host
 	t, err := c.iam.Token(iss, code)
 	if err != nil {
-		fmt.Printf("Got err: %v\n", err)
+		log.Printf("Got err: %v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
@@ -136,8 +131,12 @@ func (c Controller) Token(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Detected: %v\n", http.DetectContentType([]byte(t)))
 
 	w.Header().Set("Content-type", "application/json")
-	w.Write([]byte(t + "\n"))
 
+	// OIDC mandates no-store:
+	// https://openid.net/specs/openid-connect-core-1_0.html#TokenResponse
+	w.Header().Set("Cache-Control", "no-store")
+
+	w.Write([]byte(t + "\n"))
 }
 
 // https://authorization-server.com/authorize?

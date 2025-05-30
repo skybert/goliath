@@ -24,9 +24,11 @@ func GenerateServerCode() string {
 	return rand.Text()
 }
 
-func AccessToken(iss string, exp time.Time) (string, error) {
-	// TODO read signing key from conf
-	mySigningKey := []byte("AllYourBase")
+func AccessToken(
+	iss string,
+	conf GoliathConf) (string, error) {
+
+	exp := conf.MillisAsTime("token.refresh_token_exp_ms")
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{
@@ -34,14 +36,17 @@ func AccessToken(iss string, exp time.Time) (string, error) {
 			string(ClaimExpirationTime): exp.Unix(),
 			string(ClaimIssuer):         iss,
 		})
-	ss, err := token.SignedString(mySigningKey)
+	signingKey := []byte(conf.String("token.signing_key"))
+	ss, err := token.SignedString(signingKey)
 	fmt.Println(ss, err)
 	return ss, err
 }
 
-func RefreshToken(iss string, exp time.Time) (string, error) {
-	// TODO read signing key from conf
-	mySigningKey := []byte("AllYourBase")
+func RefreshToken(
+	iss string,
+	conf GoliathConf) (string, error) {
+
+	exp := conf.MillisAsTime("token.refresh_token_exp_ms")
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{
@@ -49,7 +54,8 @@ func RefreshToken(iss string, exp time.Time) (string, error) {
 			string(ClaimExpirationTime): exp.Unix(),
 			string(ClaimIssuer):         iss,
 		})
-	ss, err := token.SignedString(mySigningKey)
+	signingKey := []byte(conf.String("token.signing_key"))
+	ss, err := token.SignedString(signingKey)
 	fmt.Println(ss, err)
 	return ss, err
 }

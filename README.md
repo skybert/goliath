@@ -34,7 +34,7 @@ $ goliath \
 ## 1) Initiate the code authorization flow
 
 ```ini
-$ curl --include 'http://localhost:8000/authorize?scope=openid&state=foo-state-from-client&redirect_uri=https://example.com/callback&nonce=2324'
+$ curl --include "http://localhost:8000/authorize?scope=openid&state=foo-state-from-client&redirect_uri=https://example.com/callback&nonce=random-nonce-${RANDOM}"
 HTTP/1.1 200 OK
 Location: https://example.com/callback?code=K4C6CIUMG4YXUVNQUSZXCLR5TI&state=foo-state-from-client
 Date: Sun, 25 May 2025 13:32:56 GMT

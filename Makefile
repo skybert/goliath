@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := build
 
-.phony: fmt vet build todo
+.phony: fmt vet build todo help
 fmt:
 	go fmt ./...
 vet: fmt
@@ -18,3 +18,5 @@ run_gc_debug: goliath
 	GODEBUG=gctrace=1 ./goliath
 todo:
 	grep --line-number --recursive --include='*.go' TODO
+help:
+	grep -E '^\w' Makefile | cut -d: -f1 | cut -d' ' -f1 | sort

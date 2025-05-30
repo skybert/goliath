@@ -2,10 +2,18 @@
 # server
 
 answer = "42"
+
 [server]
 port = "8000"
 
-[tokens]
+[token]
 # Reference to
 # https://en.wikipedia.org/wiki/All_your_base_are_belong_to_us
 signing_key = "all your keys are belong to us"
+
+# Access token expiry, 2h
+access_token_exp_ms = 7200000
+# Refresh token expiry, 2h
+refresh_token_exp_ms = 7200000
+# ID token expiry, 2h
+id_token_exp_ms = 7200000
